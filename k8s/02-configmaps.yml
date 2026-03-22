@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: porto-config
+  namespace: porto
+data:
+  EXPERIMENT_NAME: "exp_01"
+  MODEL_NAME: "porto-training"
+  DEFAULT_ALIAS: "production"
+  AWS_DEFAULT_REGION: "us-east-1"

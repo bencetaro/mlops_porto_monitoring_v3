@@ -1,0 +1,10 @@
+pandas
+numpy
+matplotlib
+joblib
+pyyaml
+imblearn
+lightgbm
+mlflow>=2.5.0
+boto3>=1.34.0
+scikit-learn==1.7.2

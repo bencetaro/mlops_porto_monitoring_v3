@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: training
+  namespace: porto
+spec:
+  selector:
+    app: training
+  ports:
+    - name: metrics
+      port: 8001
+      targetPort: 8001
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: trainers-job
+  namespace: porto
+spec:
+  completions: 4 # 4 different training pipelines
+  parallelism: 1 # My laptop can handle only 1 at a time, should be 2-4
+  completionMode: Indexed
+  backoffLimitPerIndex: 1 # max number of retries per index
+  maxFailedIndexes: 3
+  ttlSecondsAfterFinished: 3600 # delete job 1 hour after completion
+  template:
+    metadata:
+      labels:
+        app: training
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: trainer
+          image: saze21/mlops-porto-trainer:v2.2
+          imagePullPolicy: IfNotPresent
+          # resources:
+          #   requests:
+          #     cpu: "200m"
+          #     memory: "256Mi"
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              echo "Job completion index: $JOB_COMPLETION_INDEX"
+
+              if [ "$JOB_COMPLETION_INDEX" = "0" ] && [ ! -f /pipeline/pipeline_id ]; then
+                date +%Y%m%d_%H%M%S > /pipeline/pipeline_id
+              fi
+
+              case "$JOB_COMPLETION_INDEX" in
+                0) CONFIG_FILE=rf_baseline.yml ;;
+                1) CONFIG_FILE=rf_tuned.yml ;;
+                2) CONFIG_FILE=lgbm_baseline.yml ;;
+                3) CONFIG_FILE=lgbm_tuned.yml ;;
+                *) echo "Unknown JOB_COMPLETION_INDEX=$JOB_COMPLETION_INDEX"; exit 1 ;;
+              esac
+
+              if [ ! -f /data/training/processed/preprocessors.pkl ]; then
+                echo "Missing /data/training/processed/preprocessors.pkl. Run data-prep job first."
+                exit 1
+              fi
+
+              export CONFIG_FILE
+              bash /app/docker/run_training_pipeline.sh
+              touch /pipeline/trainer_${JOB_COMPLETION_INDEX}.done
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow-server:5000
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: http://minio:9000
+            - name: EXPERIMENT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: porto-config
+                  key: EXPERIMENT_NAME
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: porto-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: porto-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: porto-config
+                  key: AWS_DEFAULT_REGION
+          ports:
+            - containerPort: 8001
+          volumeMounts:
+            - name: pipeline-data
+              mountPath: /pipeline
+            - name: app-data
+              mountPath: /data
+            - name: training-configs
+              mountPath: /src/training/configs
+      volumes:
+        - name: pipeline-data
+          persistentVolumeClaim:
+            claimName: pipeline-pvc
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data-pvc
+        - name: training-configs
+          persistentVolumeClaim:
+            claimName: training-configs-pvc

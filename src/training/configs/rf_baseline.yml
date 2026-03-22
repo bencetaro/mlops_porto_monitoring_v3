@@ -1,0 +1,19 @@
+model_type: random_forest # Use lightgbm or random_forest
+apply_rusr: true # Random Under Sampling
+apply_skfcv: false # Stratified K-Fold Cross Validation
+apply_mi_score: true # Mutual Information
+apply_fi_score: true # Feature Importance
+apply_cm: true # Confusion Matrix
+n_skf_splits: 5 # Number of splits for Stratified K-Fold Cross Validation
+n_rs_iter: 3 # Number of parameter combinations for RandomizedSearchCV
+random_state: 42
+test_size: 0.2
+
+hparams:
+  random_forest:
+    n_estimators: 300
+    max_depth: 5
+    min_samples_split: 5
+    min_samples_leaf: 2
+    max_features: 'sqrt'
+    class_weight: 'balanced'

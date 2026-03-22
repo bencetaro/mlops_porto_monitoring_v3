@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-prep
+  namespace: porto
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: data-prep
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: data-prep
+          image: saze21/mlops-porto-trainer:v2.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              if [ -f /data/training/processed/preprocessors.pkl ]; then
+                echo "[INFO] Preprocessed data already exists. Skipping data prep."
+                exit 0
+              fi
+              echo "[INFO] Start Data preparation..."
+              python -m src.training.data_prep --input_dir /data/training/raw --output_dir /data/training/processed
+              echo "[INFO] Data preparation completed successfully."
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data-pvc

@@ -1,0 +1,85 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-assets
+  namespace: porto
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: seed-assets
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed-assets
+          image: saze21/mlops-porto-trainer:v2.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              if [ ! -f /seed-data/.seeded ]; then
+                cp -a /app/data/. /seed-data/
+                touch /seed-data/.seeded
+              fi
+
+              if [ ! -f /seed-configs/.seeded ]; then
+                mkdir -p /seed-configs
+                cp -a /app/src/training/configs/. /seed-configs/
+                echo "Training configs seeded"
+                touch /seed-configs/.seeded
+              fi
+
+              if [ ! -f /seed-grafana/.seeded ]; then
+                mkdir -p /seed-grafana/dashboards
+                cp -a /app/monitoring/grafana/dashboards/. /seed-grafana/dashboards/
+                echo "Grafana dashboards seeded"
+                touch /seed-grafana/.seeded
+              fi
+
+              if [ ! -f /seed-provisioning/.seeded ]; then
+                mkdir -p /seed-provisioning/datasources
+                mkdir -p /seed-provisioning/dashboards
+                cp -a /app/monitoring/grafana/datasource.yml /seed-provisioning/datasources/datasource.yml
+                cp -a /app/monitoring/grafana/provider.yml /seed-provisioning/dashboards/provider.yml
+                echo "Grafana provisioning files seeded"
+                touch /seed-provisioning/.seeded
+              fi
+
+              if [ ! -f /seed-prom/.seeded ]; then
+                mkdir -p /seed-prom
+                cp -a /app/monitoring/prometheus.yml /seed-prom/prometheus.yml
+                echo "Prometheus config seeded"
+                touch /seed-prom/.seeded
+              fi
+          volumeMounts:
+            - name: app-data
+              mountPath: /seed-data
+            - name: training-configs
+              mountPath: /seed-configs
+            - name: grafana-dashboards
+              mountPath: /seed-grafana
+            - name: grafana-provisioning
+              mountPath: /seed-provisioning
+            - name: prometheus-config
+              mountPath: /seed-prom
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data-pvc
+        - name: training-configs
+          persistentVolumeClaim:
+            claimName: training-configs-pvc
+        - name: grafana-dashboards
+          persistentVolumeClaim:
+            claimName: grafana-dashboards-pvc
+        - name: grafana-provisioning
+          persistentVolumeClaim:
+            claimName: grafana-provisioning-pvc
+        - name: prometheus-config
+          persistentVolumeClaim:
+            claimName: prometheus-config-pvc
