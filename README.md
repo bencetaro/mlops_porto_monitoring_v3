@@ -110,3 +110,23 @@ A complete step-by-step workflow is provided in `quickstart.md`.
         |    └── lgbm_tuned.yml
         └── requirements.txt
 
+---
+
+## Inference UI Snapshot
+
+![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/6.png)
+
+---
+
+## Grafana Dashboard Snapshots
+
+![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/1.png)
+![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/2.png)
+![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/3.png)
+
+### Display Control
+
+- With dashboard environment variables we can also control which model or endpoint to be displayed in an interactive view.
+
+![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/4.png)
+![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/5.png)
