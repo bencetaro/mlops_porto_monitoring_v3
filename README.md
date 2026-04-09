@@ -132,3 +132,14 @@ A complete step-by-step workflow is provided in `quickstart.md`.
 
 ![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/4.png)
 ![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring_v3/blob/master/images/5.png)
+
+---
+
+## Data Source
+
+- Dataset: Porto Seguro’s Safe Driver Prediction
+- Source: Kaggle
+- Link: https://kaggle.com/competitions/porto-seguro-safe-driver-prediction
+
+
+The dataset is used for educational and portfolio purposes only.
